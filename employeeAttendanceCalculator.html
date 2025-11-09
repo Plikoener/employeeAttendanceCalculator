@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Prüfung Mittagsbesetzung Telefondienst</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:18px}
+    h1{font-size:1.25rem}
+    label{display:inline-block;margin:6px 8px 6px 0}
+    .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .employees{margin-top:12px;border-top:1px solid #ddd;padding-top:12px}
+    .emp-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+    .emp-row input[type="text"]{width:180px}
+    .emp-row input[type="time"]{width:110px}
+    button{padding:6px 10px}
+    table{border-collapse:collapse;margin-top:18px;width:100%;}
+    th,td{border:1px solid #ccc;padding:6px 8px;text-align:center}
+    thead th{background:#f5f5f5}
+    .legend{margin-top:10px;font-size:0.9rem}
+    .small{font-size:0.9rem;color:#555}
+    .absent{opacity:0.6}
+  </style>
+</head>
+<body>
+  <h1>Prüfung: Mittagsbesetzung Telefondienst</h1>
+
+  <div class="controls">
+    <label>Telefondienst von <input id="service-from" type="time" value="11:30"></label>
+    <label>bis <input id="service-to" type="time" value="14:30"></label>
+    <label>mind. gleichzeitig anwesend <input id="required" type="number" min="0" value="3" style="width:70px"></label>
+    <button id="add-emp">Mitarbeiter hinzufügen</button>
+    <button id="check">Prüfen</button>
+    <button id="reset" title="Alle Mitarbeiter entfernen">Reset</button>
+  </div>
+
+  <div class="employees" id="employees">
+    <!-- Mitarbeiterzeilen werden hier eingefügt -->
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    // Hilfsfunktionen
+    const toMinutes = t => {
+      if (!t) return null;
+      const parts = t.split(":");
+      return parseInt(parts[0],10)*60 + parseInt(parts[1],10);
+    };
+
+    const minutesToTime = m => {
+      const hh = Math.floor(m/60).toString().padStart(2,'0');
+      const mm = (m%60).toString().padStart(2,'0');
+      return hh+":"+mm;
+    };
+
+    const employeesDiv = document.getElementById('employees');
+    const addBtn = document.getElementById('add-emp');
+    const checkBtn = document.getElementById('check');
+    const resetBtn = document.getElementById('reset');
+
+    // Start mit zwei Beispiel-Mitarbeitern
+    function addEmployee(name = '', lunchFrom='12:00', lunchTo='12:30', absent=false){
+      const row = document.createElement('div');
+      row.className = 'emp-row';
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text'; nameInput.placeholder = 'Name'; nameInput.value = name;
+
+      const fromInput = document.createElement('input');
+      fromInput.type = 'time'; fromInput.value = lunchFrom; fromInput.title = 'Lunch von (inklusive)';
+
+      const toInput = document.createElement('input');
+      toInput.type = 'time'; toInput.value = lunchTo; toInput.title = 'Lunch bis (exklusive)';
+
+      const absentLabel = document.createElement('label');
+      const absentInput = document.createElement('input');
+      absentInput.type = 'checkbox'; absentInput.checked = absent;
+      absentLabel.appendChild(absentInput);
+      absentLabel.appendChild(document.createTextNode(' abwesend'));
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button'; removeBtn.textContent = 'Entfernen';
+      removeBtn.onclick = ()=> row.remove();
+
+      row.appendChild(nameInput);
+      row.appendChild(fromInput);
+      row.appendChild(toInput);
+      row.appendChild(absentLabel);
+      row.appendChild(removeBtn);
+
+      employeesDiv.appendChild(row);
+      return row;
+    }
+
+    // Beispiel-Einträge
+    addEmployee('Anna', '11:45','12:30', false);
+    addEmployee('Boris', '12:15','13:00', false);
+
+    addBtn.addEventListener('click', ()=> addEmployee());
+    resetBtn.addEventListener('click', ()=> {
+      employeesDiv.innerHTML = '';
+    });
+
+    // Erzeuge Intervall-Startzeiten (15 min) zwischen 11:30 und 14:15
+    function generateIntervalStarts(){
+      const start = toMinutes('11:30');
+      const end = toMinutes('14:30'); // exclusive end; last interval begins at 14:15
+      const arr = [];
+      for(let t = start; t < end; t += 15) arr.push(t);
+      return arr; // includes 11:30 ... 14:15
+    }
+
+    function collectEmployees(){
+      const rows = Array.from(document.querySelectorAll('.emp-row'));
+      return rows.map(r=>{
+        const inputs = r.querySelectorAll('input');
+        const name = inputs[0].value.trim() || '(unbenannt)';
+        const lunchFrom = inputs[1].value;
+        const lunchTo = inputs[2].value;
+        const absent = inputs[3].checked;
+        return {name, lunchFrom, lunchTo, absent};
+      });
+    }
+
+    function check(){
+      const serviceFrom = document.getElementById('service-from').value;
+      const serviceTo = document.getElementById('service-to').value;
+      const required = parseInt(document.getElementById('required').value || '0',10);
+      if(!serviceFrom || !serviceTo){ alert('Bitte Service-Zeiten eingeben.'); return; }
+      const sFrom = toMinutes(serviceFrom);
+      const sTo = toMinutes(serviceTo);
+      if(sTo <= sFrom){ alert('Die Service-Endzeit muss nach der Startzeit liegen.'); return; }
+
+      const emp = collectEmployees().filter(e=>!e.absent);
+
+      const intervals = generateIntervalStarts();
+      const counts = intervals.map(intervalStart=>{
+        // prüfen ob dieses Intervall (Beginn) in Servicezeit liegt
+        if(!(intervalStart >= sFrom && intervalStart < sTo)) return null; // außerhalb Service
+
+        // sonst zähle Mitarbeiter, die NICHT in ihrer Pause sind
+        let cnt = 0;
+        emp.forEach(e=>{
+          const lf = toMinutes(e.lunchFrom);
+          const lt = toMinutes(e.lunchTo);
+          // falls lunch times fehlen, interpretieren als keine Pause => anwesend
+          if(lf===null || lt===null){ cnt++; return; }
+          // Mitarbeiter ist abwesend während [lf, lt) -> also anwesend wenn intervalStart < lf OR intervalStart >= lt
+          if(!(intervalStart >= lf && intervalStart < lt)) cnt++;
+        });
+        return cnt;
+      });
+
+      renderTable(intervals, counts, required);
+    }
+
+    function renderTable(intervals, counts, required){
+      const container = document.getElementById('result');
+      container.innerHTML = '';
+
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      const thr = document.createElement('tr');
+      const fmtTimes = intervals.map(t=>minutesToTime(t));
+      fmtTimes.forEach(tm=>{
+        const th = document.createElement('th'); th.textContent = tm; thr.appendChild(th);
+      });
+      thead.appendChild(thr);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      const tr = document.createElement('tr');
+      counts.forEach(c=>{
+        const td = document.createElement('td');
+        if(c === null){ td.textContent = '-'; td.className='small absent'; td.style.background = '#f0f0f0'; }
+        else{
+          td.textContent = c;
+          // Hintergrundfarbenregeln
+          if(c > required) td.style.background = '#c8f7c2'; // grün (hell)
+          else if(c === required) td.style.background = '#fff2a8'; // gelb
+          else td.style.background = '#f7c2c2'; // rot
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+      table.appendChild(tbody);
+
+      // Legende
+      const legend = document.createElement('div');
+      legend.className = 'legend';
+      legend.innerHTML = '<strong>Legende:</strong> grün &gt; ' + required + ', gelb = ' + required + ', rot &lt; ' + required + ' &nbsp; ("-" = außerhalb Servicezeit)';
+
+      container.appendChild(table);
+      container.appendChild(legend);
+    }
+
+    checkBtn.addEventListener('click', check);
+
+    // Optional: Enter drücken im letzten Input führt zu Prüfen
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')){
+        e.preventDefault(); check();
+      }
+    });
+
+  </script>
+</body>
+</html>
