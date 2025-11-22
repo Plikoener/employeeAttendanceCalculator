@@ -1,8 +1,12 @@
-Ich benötige eine einfach Website zu Prüfung der ausreichenden Besetzung der Mittagszeit für einen Telefondienst. In dieser möchte ich interaktiv den Zeitraum  in "von Zeit" und "Bis Zeit" festlegen, für die der Telefondienst gilt und zusätzlich wie viele Mitarbeiter gleichzeitig anwesend sein müssen. Weiterhin möchte ich für jeden Mitarbeitenden den Namen, die Startzeit der Mittagspause und die Endzeit der Mittagspause als Uhrzeitfeld , und Booleanfeld "abwesend" eintragen können. Dies soll für interaktiv für mehrere Mitarbeiter erweiterbar sein. Mit einem Button "Prüfen" soll von der von Zeit des Telefondienstes bis zu jeweils geprüft werden wie viele Mitarbeiter anwesend sind.
-Mitarbeiter für die das Booleanfeld "abwesend" aktiv ist werden für diese Prüfung nicht berücksichtigt
+Ich benötige eine einfach Website zu Prüfung der ausreichenden Besetzung der Mittagszeit für einen Telefondienst. 
+In dieser möchte ich interaktiv den Zeitraum  in "von Zeit" und "Bis Zeit" festlegen, für die der Telefondienst gilt und zusätzlich wie viele Mitarbeiter gleichzeitig anwesend sein müssen.
+Weiterhin möchte ich für jeden Mitarbeitenden den Namen, die Startzeit der Mittagspause und die Endzeit der Mittagspause als Uhrzeitfeld , und Booleanfeld "abwesend" eintragen können. 
+Dies soll für interaktiv für mehrere Mitarbeiter erweiterbar sein. Mit einem Button "Prüfen" soll von der von Zeit des Telefondienstes bis zu jeweils geprüft werden wie viele Mitarbeiter anwesend sind.
+Mitarbeiter für die das Booleanfeld "abwesend" aktiv ist werden für diese Prüfung nicht berücksichtigt.
 Jeder Mitarbeiter ist anwesend, außer in der "von Zeit" bis zur "Bis Zeit". 
 Bitte Summiere für jeden 15 min Abschnitt  zwischen 11:30 und 14:30 die Anzahl an anwesenden Mitarbeitern. 
-Gebe das Ergebnis in einer zweizeiligen Tabelle aus. In der ersten Zeile ist die Uhrzeit des Beginn, des jeweiligen 15 min Abschnittes als Überschrift eingetragen. Also in der ersten Spalte 11:30, in der zweiten Spalte 11:45 bis zur letzten Spalte 14:15.
+Gebe das Ergebnis in einer zweizeiligen Tabelle aus. In der ersten Zeile ist die Uhrzeit des Beginn, des jeweiligen 15 min Abschnittes als Überschrift eingetragen. 
+Also in der ersten Spalte 11:30, in der zweiten Spalte 11:45 bis zur letzten Spalte 14:15.
 In der zweiten Zeile werden die Summen der anwesenden Mitarbeiter eingetragen. Der Hintergrund der Tabellenzellen in der zweiten Zeile haben einen grünen Hintergrund, wenn die Summe pro 15 min Abschnitt >2 ist. Ist die Summe 2 soll der Hintergrund gelb sein. Ist die Summe 1 oder 0 ist der Hintergrund rot.
 Die Website ist in HTML zu gestalten mit eingebettenen Javascript Code für die Berechnug der Summen inklusive  dem Füllen der Tabellenzellen in der zweiten Zeile.
 
